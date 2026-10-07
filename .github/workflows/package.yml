@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: normlanguage/registry/.github/actions/setup-norm@1c5b2948a0c788f1aa21542255eb1a445027ab29
         with:
-          source-ref: 02691fed8b6906cc69ef6d21b6e9edd61930981d
+          source-ref: 00589dd5f1a457ed756f0dc163772e1cb42ffa1c
       - uses: actions/setup-java@v4
         with:
           distribution: oracle

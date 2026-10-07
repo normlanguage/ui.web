@@ -28,7 +28,7 @@ private class WebComponentView<T> implements NativeView {
   Function<Void(T)> release
 
   String kind() { identity }
-  List<View> children() { describeChildren(content) }
+  List<View> children(RenderNode node) { describeChildren(content) }
   RenderNode create(RenderBackend backend, ViewScope scope) {
     switch backend {
       case WebBackend web {
