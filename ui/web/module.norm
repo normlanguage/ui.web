@@ -1,0 +1,12 @@
+Module module() {
+ module(name: "ui.web", version: 1,
+  exports: ["internal.WebNode", "internal.WebSession", "native.Component", "native.Span", "internal.WebHost", "backend", "layout", "application", "native"],
+  dependencies: [dependency(repository: "norm", name: "java.base", version: 1), dependency(repository: "github", name: "ui", version: 7), dependency(repository: "github", name: "ui.theme", version: 2)],
+  binding: jarBinding(target: mavenJar(group: "dev.normlanguage", artifact: "ui-web", version: "1", resolution: sha256("9ffd05b0db56735eb6bc6dc1bce45e7c10a27e0d76726cb38945508463bddb1d")), api: [
+   jarType(name: "dev.normlanguage.ui.web.WebNode", members: ["new", "nativeComponent", "enabled", "identity", "title", "text", "readText", "placeholder", "multiline", "checked", "onAction", "onText", "onToggle", "clear", "focus", "children", "style", "layout", "layoutStyle", "direction", "theme", "grid", "gridSpan", "breakpoint", "responsive", "masonry", "close"]),
+   jarType(name: "dev.normlanguage.ui.web.WebSession", members: ["root", "onClose", "later", "report", "close"]),
+   jarType(name: "com.vaadin.flow.component.Component", members: []),
+   jarType(name: "com.vaadin.flow.component.html.Span", members: ["new", "getText", "setText"]),
+   jarType(name: "dev.normlanguage.ui.web.WebHost", members: ["new", "run", "close"])
+  ]))
+}

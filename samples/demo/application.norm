@@ -1,0 +1,122 @@
+package demo
+import ui.Widget
+import ui.Column
+import ui.Row
+import ui.Text
+import ui.Box
+import ui.Insets
+import ui.SizeConstraints
+import ui.Dimension
+import ui.CrossAlignment
+import ui.WidgetRole
+import ui.NodeKey
+import ui.Binding
+import ui.button
+import ui.textField
+import ui.toggle
+import ui.ForEach
+import ui.ValueKey
+import ui.ThemeProvider
+import ui.UiProvider
+import ui.UiConfiguration
+import ui.TextArea
+import ui.Grid
+import ui.GridItem
+import ui.GridBreakpoint
+import ui.Masonry
+import ui.Scroll
+import ui.Axis
+import ui.web.runWeb
+import ui.theme.ThemeManager
+import ui.theme.ThemeDefinition
+import ui.theme.ThemeMode
+import ui.theme.Color
+
+class Note {
+  String id String text
+}
+class Editor implements Widget {
+  Demo owner
+  Widget build() {
+    TextArea(placeholder: "A mounted editor", value: Binding<String>(read: () { owner.details }, write: (String next) { owner.details = next }), rows: 3)
+  }
+  Void dispose() {
+    owner.disposed = owner.disposed + 1
+  }
+}
+class Demo implements Widget {
+  ThemeManager theme = ThemeManager(ThemeDefinition(primary: Color(hex: "#2563EB")))
+  String draft = ""
+  String details = "Resources follow this editor's lifetime."
+  Boolean dark = false
+  Boolean enabled = true
+  Boolean showEditor = true
+  Integer count = 0
+  Integer disposed = 0
+  List<Note> notes = [Note(id: "first", text: "Alpha"), Note(id: "second", text: "Beta")]
+  Editor? editor = null
+  Void init() {
+    editor = Editor(owner: this)
+  }
+  Void add() {
+    if draft.isBlank {
+      return
+    }
+    List<Note> next = [for (note : notes) note]
+    next.add(Note(id: "note-" + count.toString(), text: draft))
+    notes = next
+    count = count + 1 draft = ""
+  }
+  Widget build() {
+    ThemeProvider(source: theme, child: UiProvider(configuration: UiConfiguration(fontFamily: "Segoe UI", fontSize: 15.0), child:
+      Box(size: SizeConstraints(width: Dimension.Fill, minHeight: 720.0), padding: Insets(top: 32.0, right: 48.0, bottom: 32.0, left: 48.0), content:
+        Column(cross: CrossAlignment.Stretch, gap: 20.0) {
+          Text(text: "Norm Web", role: WidgetRole.Title)
+          Text(text: "One widget protocol. A real Vaadin session.", role: WidgetRole.Muted)
+          Row(gap: 12.0) {
+            button(text: "Count " + count.toString(), key: NodeKey.Named("counter"), role: WidgetRole.Primary, action: () { count = count + 1 })
+            button(text: if dark { "Light theme" } else { "Dark theme" }, key: NodeKey.Named("theme"), action: () { dark = !dark theme.setMode(if dark { ThemeMode.Dark } else { ThemeMode.Light }) })
+            toggle(text: "Enabled", value: Binding<Boolean>(read: () { enabled }, write: (Boolean next) { enabled = next }), key: NodeKey.Named("enabled"))
+          }
+          Row(gap: 12.0) {
+            textField(placeholder: "Write a note", value: Binding<String>(read: () { draft }, write: (String next) { draft = next }), submit: this.add, key: NodeKey.Named("draft"))
+            button(text: "Add note", action: this.add, enabled: enabled && !draft.isBlank, key: NodeKey.Named("add"))
+          }
+          Text("Draft: " + draft)
+          button(text: "Reverse notes", key: NodeKey.Named("reverse"), action: () { List<Note> next = []
+              var index = notes.size() - 1
+              for index >= 0 {
+                next.add(notes[index]) index = index - 1
+              }
+              notes = next })
+          Column(cross: CrossAlignment.Stretch, gap: 10.0) {
+            ForEach<Note>(items: notes, identity: (Note note) { ValueKey<String>(note.id) }, child: (Note note) {
+              textField(placeholder: note.id, value: Binding<String>(read: () { note.text }, write: (String next) { note.text = next }), submit: () {})
+            })
+          }
+          Row(gap: 12.0) {
+            button(text: if showEditor { "Unmount editor" } else { "Mount editor" }, key: NodeKey.Named("mount"), action: () { showEditor = !showEditor })
+            Text("Disposed editors: " + disposed.toString())
+          }
+          Grid(key: NodeKey.Named("responsive-grid"), columns: 1, breakpoints: [GridBreakpoint(minimumWidth: 700.0, columns: 3)], gap: 12.0,
+            items: [GridItem(content: Text("Responsive one")), GridItem(content: Text("Responsive two")), GridItem(content: Text("Responsive three"))])
+          Box(size: SizeConstraints(width: Dimension.Fixed(640.0)), content:
+            Masonry(key: NodeKey.Named("masonry"), minimumColumnWidth: 200.0, gap: 12.0, children: [
+              Box(key: NodeKey.Named("tile-one"), size: SizeConstraints(height: Dimension.Fixed(80.0)), content: Text("First")),
+              Box(key: NodeKey.Named("tile-two"), size: SizeConstraints(height: Dimension.Fixed(140.0)), content: Text("Second")),
+              Box(key: NodeKey.Named("tile-three"), size: SizeConstraints(height: Dimension.Fixed(60.0)), content: Text("Third")),
+              Box(key: NodeKey.Named("tile-four"), size: SizeConstraints(height: Dimension.Fixed(100.0)), content: Text("Fourth"))]))
+          Box(size: SizeConstraints(width: Dimension.Fixed(360.0), height: Dimension.Fixed(120.0)), content:
+            Scroll(key: NodeKey.Named("scroll-fit"), axis: Axis.Vertical, fitWidth: true,
+              child: Column(cross: CrossAlignment.Stretch, gap: 12.0, children: [for (index : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) Text("Scroll item " + index.toString())])))
+          if showEditor {
+            editor!!
+          }
+        }))
+    )
+  }
+  Void dispose() {
+    theme.close()
+  }
+}
+Void main() { runWeb(port: 8080, page: () { Demo() }) }
