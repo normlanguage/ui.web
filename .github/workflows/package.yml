@@ -34,6 +34,10 @@ jobs:
           $cache = Join-Path $HOME '.norm/cache/maven'
           New-Item -ItemType Directory -Force $cache | Out-Null
           Copy-Item -Path build/repository/* -Destination $cache -Recurse -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: build/repository
       - name: Locate Module
         id: module
         shell: bash
