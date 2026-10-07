@@ -8,6 +8,27 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 
 class WebSessionTest {
+  @Test
+  void registrationsCanBeReleasedBeforeTheMountCloses() {
+    var session = new WebSession(ui(), new Div());
+    var calls = new ArrayList<Integer>();
+    var registration = session.onClose(() -> calls.add(1));
+    registration.remove();
+    session.close();
+    assertTrue(calls.isEmpty());
+  }
+
+  @Test
+  void detachingTheConsumerContainerClosesItsMount() {
+    var root = new Div();
+    var session = new WebSession(ui(), root);
+    var calls = new ArrayList<Integer>();
+    session.onClose(() -> calls.add(1));
+    com.vaadin.flow.component.ComponentUtil.onComponentDetach(root);
+    session.close();
+    assertEquals(List.of(1), calls);
+  }
+
   static UI ui() {
     var session =
         new com.vaadin.flow.server.VaadinSession(null) {

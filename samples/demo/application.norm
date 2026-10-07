@@ -26,7 +26,9 @@ import ui.GridBreakpoint
 import ui.Masonry
 import ui.Scroll
 import ui.Axis
-import ui.web.runWeb
+import ui.web.WebApplication
+import ui.web.native.Component
+import demo.internal.webHostNew
 import ui.theme.ThemeManager
 import ui.theme.ThemeDefinition
 import ui.theme.ThemeMode
@@ -119,4 +121,7 @@ class Demo implements Widget {
     theme.close()
   }
 }
-Void main() { runWeb(port: 8080, page: () { Demo() }) }
+Void main() {
+  var server = webHostNew(arg0: 8080, arg1: (Component? container) { var mounted = WebApplication(container: container!!, widget: Demo()) })
+  try { server.run() } finally { server.close() }
+}

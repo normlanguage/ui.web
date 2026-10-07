@@ -11,3 +11,9 @@ src/main/bundles/*
 .vaadin-node-tasks.lock
 vite.generated.ts
 types.d.ts
+**/src/main/frontend/generated/
+**/frontend/generated/
+**/vite.generated.ts
+**/types.d.ts
+ui/web/resources/META-INF/licenses/ui.web/LICENSE
+samples/demo/resources/META-INF/licenses/demo/LICENSE

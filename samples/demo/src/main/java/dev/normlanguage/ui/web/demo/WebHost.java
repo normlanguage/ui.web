@@ -1,8 +1,9 @@
-package dev.normlanguage.ui.web;
+package dev.normlanguage.ui.web.demo;
 
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.component.page.Push;
 import java.util.concurrent.CountDownLatch;
+import com.vaadin.flow.component.Component;
 import java.util.function.Consumer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -10,12 +11,12 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 public final class WebHost implements AutoCloseable {
   private final int port;
-  private final Consumer<WebSession> factory;
+  private final Consumer<Component> factory;
   private ConfigurableApplicationContext context;
   private final CountDownLatch stopped = new CountDownLatch(1);
   private boolean started;
 
-  public WebHost(int port, Consumer<WebSession> factory) {
+  public WebHost(int port, Consumer<Component> factory) {
     if (port < 1 || port > 65535) throw new IllegalArgumentException("port must be in 1..65535");
     this.port = port;
     this.factory = java.util.Objects.requireNonNull(factory);

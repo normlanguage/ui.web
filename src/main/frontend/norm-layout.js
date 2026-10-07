@@ -9,8 +9,7 @@ class NormLayout extends HTMLElement {
       this.observeChildren();
       this.schedule();
     });
-    this.childrenChanged.observe(this, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-norm-span'] });
-    this.observeChildren();
+    this.observation();
     this.schedule();
   }
 
@@ -22,7 +21,19 @@ class NormLayout extends HTMLElement {
   }
 
   attributeChangedCallback() {
+    this.observation();
     this.schedule();
+  }
+
+  observation() {
+    if (!this.resize) return;
+    this.resize.disconnect();
+    this.childrenChanged.disconnect();
+    if (!this.isConnected) return;
+    const kind = this.getAttribute('data-norm-layout');
+    if (kind !== 'responsive-grid' && kind !== 'masonry') return;
+    this.childrenChanged.observe(this, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-norm-span'] });
+    this.observeChildren();
   }
 
   observeChildren() {
@@ -33,6 +44,8 @@ class NormLayout extends HTMLElement {
 
   schedule() {
     if (!this.isConnected || this.frame != null) return;
+    const kind = this.getAttribute('data-norm-layout');
+    if (kind !== 'responsive-grid' && kind !== 'masonry') return;
     this.frame = requestAnimationFrame(() => {
       this.frame = null;
       this.arrange();
@@ -41,7 +54,7 @@ class NormLayout extends HTMLElement {
 
   arrange() {
     const kind = this.getAttribute('data-norm-layout');
-    if (kind === 'grid') {
+    if (kind === 'responsive-grid') {
       let columns = Number(this.getAttribute('data-norm-columns'));
       for (const [width, count] of JSON.parse(this.getAttribute('data-norm-breakpoints') || '[]')) {
         if (this.clientWidth >= width) columns = count;

@@ -1,12 +1,14 @@
 Module module() {
- module(name: "ui.web", version: 1,
-  exports: ["internal.WebNode", "internal.WebSession", "native.Component", "native.Span", "internal.WebHost", "backend", "layout", "application", "native"],
-  dependencies: [dependency(repository: "norm", name: "java.base", version: 1), dependency(repository: "github", name: "ui", version: 7), dependency(repository: "github", name: "ui.theme", version: 2)],
-  binding: jarBinding(target: mavenJar(group: "dev.normlanguage", artifact: "ui-web", version: "1", resolution: sha256("55a11b3d60b6606da8698e4f993f12f1bf25694903d3eeefc688f36a444eca9c")), api: [
-   jarType(name: "dev.normlanguage.ui.web.WebNode", members: ["new", "nativeComponent", "enabled", "identity", "title", "text", "readText", "placeholder", "multiline", "checked", "onAction", "onText", "onToggle", "clear", "focus", "children", "style", "layout", "layoutStyle", "direction", "theme", "grid", "gridSpan", "breakpoint", "responsive", "masonry", "close"]),
-   jarType(name: "dev.normlanguage.ui.web.WebSession", members: ["root", "onClose", "later", "report", "close"]),
-   jarType(name: "com.vaadin.flow.component.Component", members: []),
-   jarType(name: "com.vaadin.flow.component.html.Span", members: ["new", "getText", "setText"]),
-   jarType(name: "dev.normlanguage.ui.web.WebHost", members: ["new", "run", "close"])
+ module(name: "ui.web", version: 2,
+  exports: ["native.UI", "native.Container", "native.Component", "native.Span", "backend", "application", "native"],
+  dependencies: [dependency(repository: "norm", name: "java.base", version: 1), dependency(repository: "github", name: "ui", version: 8), dependency(repository: "github", name: "ui.theme", version: 3)],
+  binding: jarBinding(target: mavenJar(group: "dev.normlanguage", artifact: "ui-web", version: "2", resolution: sha256("907797cbf953fb485761132f3a739c28c88c53d3bf91f4a2a4e7bc2f5fd3db0e")), api: [
+   jarType(name: "dev.normlanguage.ui.web.WebNode", alias: "internal.WebNode", members: ["new", "nativeComponent", "enabled", "identity", "title", "text", "readText", "placeholder", "multiline", "checked", "onAction", "onText", "onToggle", "clear", "focus", "children", "style", "layout", "layoutStyle", "direction", "theme", "grid", "gridSpan", "breakpoint", "responsive", "masonry", "close"]),
+   jarType(name: "dev.normlanguage.ui.web.WebSession", alias: "internal.WebSession", members: ["new", "root", "onClose", "later", "report", "close"]),
+   jarType(name: "com.vaadin.flow.component.Component", alias: "native.Component", members: []),
+   jarType(name: "com.vaadin.flow.component.html.Span", alias: "native.Span", members: ["new", "getText", "setText"]),
+   jarType(name: "com.vaadin.flow.component.UI", alias: "native.UI", members: []),
+   jarType(name: "dev.normlanguage.ui.web.WebContainer", alias: "native.Container", members: ["new"]),
+   jarType(name: "com.vaadin.flow.shared.Registration", alias: "internal.Registration", members: ["remove"])
   ]))
 }

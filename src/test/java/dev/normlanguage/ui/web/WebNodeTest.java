@@ -8,6 +8,23 @@ import org.junit.jupiter.api.Test;
 
 class WebNodeTest {
   @Test
+  void containersRetainBlockSemanticsWhenUsingACustomElementTag() {
+    var node = new WebNode("container");
+    assertEquals("norm-layout", node.element().getTag());
+    assertEquals("block", node.element().getStyle().get("display"));
+  }
+
+  @Test
+  void onlyResponsiveGridUsesTheColumnObserver() {
+    var node = new WebNode("container");
+    node.layout("grid");
+    assertEquals("grid", node.element().getAttribute("data-norm-layout"));
+    node.grid(3);
+    assertEquals("responsive-grid", node.element().getAttribute("data-norm-layout"));
+    assertEquals("grid", node.element().getStyle().get("display"));
+  }
+
+  @Test
   void emptyRenderedChildrenPreserveLeafText() {
     for (String kind : List.of("text", "button")) {
       var node = new WebNode(kind);
@@ -48,10 +65,10 @@ class WebNodeTest {
     var calls = new AtomicInteger();
     node.onAction(calls::incrementAndGet);
     node.onAction(() -> calls.addAndGet(2));
-    node.fireAction();
+    ((com.vaadin.flow.component.button.Button) node.nativeComponent()).click();
     assertEquals(2, calls.get());
     node.close();
-    node.fireAction();
+    ((com.vaadin.flow.component.button.Button) node.nativeComponent()).click();
     assertEquals(2, calls.get());
   }
 
