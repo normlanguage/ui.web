@@ -1,22 +1,36 @@
 package dev.normlanguage.ui.web;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.UIDetachedException;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.shared.Registration;
 import java.util.*;
 
 public final class WebSession implements AutoCloseable {
   private final UI ui;
   private final VaadinSession owner;
-  private final Div root;
+  private final Component root;
+  private final Registration detached;
   private final List<Runnable> cleanup = new ArrayList<>();
   private boolean closed;
 
-  WebSession(UI ui, Div root) {
+  public WebSession(Component root) {
+    this(
+        root.getUI()
+            .orElseThrow(
+                () -> new IllegalStateException("mount container must be attached to a UI")),
+        root);
+  }
+
+  WebSession(UI ui, Component root) {
+    if (!(root instanceof HasComponents))
+      throw new IllegalArgumentException("mount container must support child components");
     this.ui = ui;
     this.owner = Objects.requireNonNull(ui.getSession());
     this.root = root;
+    detached = root.addDetachListener(event -> close());
   }
 
   private void locked(Runnable action) {
@@ -32,17 +46,19 @@ public final class WebSession implements AutoCloseable {
     locked(
         () -> {
           if (closed) throw new IllegalStateException("session is closed");
-          root.removeAll();
-          root.add(node.component());
+          ((HasComponents) root).removeAll();
+          ((HasComponents) root).add(node.nativeComponent());
         });
   }
 
-  public void onClose(Runnable release) {
+  public Registration onClose(Runnable release) {
+    Runnable entry = release::run;
     locked(
         () -> {
-          if (closed) release.run();
-          else cleanup.add(release);
+          if (closed) entry.run();
+          else cleanup.add(entry);
         });
+    return Registration.once(() -> locked(() -> cleanup.remove(entry)));
   }
 
   public void later(Runnable action) {
@@ -77,17 +93,19 @@ public final class WebSession implements AutoCloseable {
         () -> {
           if (closed) return;
           closed = true;
+          detached.remove();
           RuntimeException failure = null;
-          for (int i = cleanup.size() - 1; i >= 0; i--) {
+          var releases = List.copyOf(cleanup);
+          cleanup.clear();
+          for (int i = releases.size() - 1; i >= 0; i--) {
             try {
-              cleanup.get(i).run();
+              releases.get(i).run();
             } catch (RuntimeException error) {
               if (failure == null) failure = error;
               else failure.addSuppressed(error);
             }
           }
-          cleanup.clear();
-          root.removeAll();
+          ((HasComponents) root).removeAll();
           if (failure != null) throw failure;
         });
   }

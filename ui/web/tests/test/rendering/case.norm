@@ -4,7 +4,6 @@ import ui.web.native.Span
 import ui.web.native.spanNew
 import ui.ViewScope
 import ui.web.WebBackend
-import ui.web.webHandle
 import ui.Renderer
 import ui.Widget
 import ui.View

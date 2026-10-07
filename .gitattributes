@@ -1,2 +1,4 @@
 src/main/frontend/** text eol=lf
+samples/demo/src/main/frontend/** text eol=lf
 *.bundle binary
+LICENSE text eol=lf

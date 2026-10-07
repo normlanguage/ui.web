@@ -24,7 +24,6 @@ public final class WebNode implements AutoCloseable {
   private Consumer<String> textChanged;
   private Consumer<Boolean> checkedChanged;
   private boolean closed;
-  private int columns;
   private final java.util.SortedMap<Double, Integer> breakpoints = new java.util.TreeMap<>();
 
   public WebNode(String kind) {
@@ -38,7 +37,7 @@ public final class WebNode implements AutoCloseable {
       case "input" -> new TextField();
       case "multiline" -> new TextArea();
       case "toggle" -> new Checkbox();
-      case "container" -> new WebLayout();
+      case "container" -> new WebContainer();
       default -> throw new IllegalArgumentException("Unknown node kind: " + kind);
     };
   }
@@ -78,10 +77,6 @@ public final class WebNode implements AutoCloseable {
   }
 
   public Component nativeComponent() {
-    return component;
-  }
-
-  Component component() {
     return component;
   }
 
@@ -200,7 +195,7 @@ public final class WebNode implements AutoCloseable {
 
   public void grid(int columns) {
     if (columns < 1) throw new IllegalArgumentException("columns must be positive");
-    this.columns = columns;
+    element().setAttribute("data-norm-layout", "responsive-grid");
     element().setAttribute("data-norm-columns", Integer.toString(columns));
     layoutStyle(
         "grid-template-columns", "repeat(var(--norm-columns," + columns + "), minmax(0,1fr))");
