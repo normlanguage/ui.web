@@ -1,0 +1,7 @@
+.gradle/
+build/
+.norm/
+.norm-home/
+.tmp/
+node_modules/
+frontend/generated/
