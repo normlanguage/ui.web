@@ -1,6 +1,6 @@
 Module module() {
   module(name: "demo", version: 2, exports: ["application"],
     dependencies: [dependency(repository: "github", name: "ui.web", version: 2), dependency(repository: "github", name: "ui", version: 8), dependency(repository: "github", name: "ui.theme", version: 3)],
-    binding: jarBinding(target: mavenJar(group: "dev.normlanguage", artifact: "ui-web-demo", version: "2", resolution: sha256("7fe755f8b9ecf33649ab2cf62075504994067f3886802028b59e9f51a096228e")),
+    binding: jarBinding(target: mavenJar(group: "dev.normlanguage", artifact: "ui-web-demo", version: "2", resolution: sha256("acedd37de611e50ef1fd2aa4e92512fc512a09984a6b0391cd6abd4db5aa2bbb")),
       api: [jarType(name: "dev.normlanguage.ui.web.demo.WebHost", alias: "internal.WebHost", members: ["new", "run", "close"])]))
 }
