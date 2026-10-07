@@ -1,0 +1,150 @@
+package ui.web
+import ui.RenderNode
+import ui.LayoutSpec
+import ui.LayoutView
+import ui.NativeView
+import ui.View
+import ui.MainAlignment
+import ui.CrossAlignment
+import ui.Axis
+import ui.Dimension
+import ui.DockArea
+import ui.SizeConstraints
+import ui.web.internal.webNodeNew
+import ui.web.internal.WebNode
+import ui.Insets
+import ui.GridBreakpoint
+import ui.GridCell
+import ui.FlexSizing
+import ui.ThemedRenderNode
+import ui.ConfiguredRenderNode
+import ui.UiConfiguration
+import ui.theme.Theme
+import std.core.Exception
+
+class WebLayoutNode implements WebNodePeer, ThemedRenderNode, ConfiguredRenderNode {
+  private WebRenderNode base
+  WebNode webNode() {
+    base.webNode()
+  }
+  Void theme(Theme? theme) {
+    base.theme(theme)
+  }
+  Void configure(UiConfiguration configuration) {
+    base.configure(configuration)
+  }
+  Void close() {
+    base.close()
+  }
+  private LayoutSpec specification
+  WebLayoutNode(LayoutSpec specification) {
+    base = WebRenderNode(peer: webNodeNew(arg0: "container"))
+    this.specification = specification
+  }
+  Void update(View view) {
+    base.update(view)
+    switch view.content {
+      case Native(NativeView descriptor) { switch descriptor { case LayoutView layout { specification = layout.specification } case _ { throw Exception(message: "layout descriptor required") } } }
+      case _ {
+        throw Exception(message: "layout descriptor required")
+      }
+    }
+    var peer = this.webNode()
+    switch specification {
+      case Flex(Axis axis, Double gap, MainAlignment main, CrossAlignment cross, Boolean wrap, _) {
+        peer.layout("flex")
+        peer.layoutStyle(arg0: "flex-direction", arg1: if axis == Axis.Vertical { "column" } else { "row" })
+        peer.layoutStyle(arg0: "gap", arg1: gap.toString() + "px")
+        peer.layoutStyle(arg0: "justify-content", arg1: webMain(main))
+        peer.layoutStyle(arg0: "align-items", arg1: webCross(cross))
+        peer.layoutStyle(arg0: "flex-wrap", arg1: if wrap { "wrap" } else { "nowrap" })
+      }
+      case Grid(Integer columns, Double gap, _, List<GridBreakpoint> breakpoints) {
+        peer.layout("grid")
+        peer.grid(columns)
+        for breakpoint : breakpoints {
+          peer.breakpoint(arg0: breakpoint.minimumWidth, arg1: breakpoint.columns)
+        }
+        peer.responsive()
+        peer.layoutStyle(arg0: "gap", arg1: gap.toString() + "px")
+      }
+      case Box(SizeConstraints size, Insets padding) {
+        peer.layout("block")
+        this.dimension(axis: "width", dimension: size.width)
+        this.dimension(axis: "height", dimension: size.height)
+        peer.layoutStyle(arg0: "min-width", arg1: size.minWidth.toString() + "px")
+        peer.layoutStyle(arg0: "min-height", arg1: size.minHeight.toString() + "px")
+        peer.layoutStyle(arg0: "max-width", arg1: if size.maxWidth != null { size.maxWidth!!.toString() + "px" } else { "none" })
+        peer.layoutStyle(arg0: "max-height", arg1: if size.maxHeight != null { size.maxHeight!!.toString() + "px" } else { "none" })
+        peer.layoutStyle(arg0: "padding", arg1: padding.top.toString() + "px " + padding.right.toString() + "px " + padding.bottom.toString() + "px " + padding.left.toString() + "px")
+        peer.layoutStyle(arg0: "box-sizing", arg1: "border-box")
+      }
+      case Stack(CrossAlignment horizontal, CrossAlignment vertical) {
+        peer.layout("grid")
+        peer.layoutStyle(arg0: "justify-items", arg1: webCross(horizontal))
+        peer.layoutStyle(arg0: "align-items", arg1: webCross(vertical))
+      }
+      case Dock(_) {
+        peer.layout("grid")
+        peer.layoutStyle(arg0: "grid-template-columns", arg1: "auto minmax(0,1fr) auto")
+        peer.layoutStyle(arg0: "grid-template-rows", arg1: "auto minmax(0,1fr) auto")
+      }
+      case Scroll(Axis axis, Boolean fitWidth, Boolean fitHeight) {
+        peer.layout("block")
+        peer.layoutStyle(arg0: "overflow-x", arg1: if axis == Axis.Horizontal { "auto" } else { "hidden" })
+        peer.layoutStyle(arg0: "overflow-y", arg1: if axis == Axis.Vertical { "auto" } else { "hidden" })
+      }
+      case Masonry(Double minimumColumnWidth, Double gap) {
+        peer.layout("block")
+        peer.masonry(arg0: minimumColumnWidth, arg1: gap)
+      }
+    }
+  }
+  private Void dimension(String axis, Dimension dimension) {
+    this.webNode().layoutStyle(arg0: axis, arg1: switch dimension { case Content { break "fit-content" } case Fixed(Double value) { break value.toString() + "px" } case Fill { break "100%" } })
+  }
+  Void children(List<RenderNode> children) {
+    base.children(children)
+    var index = 0
+    for child : children {
+      var peer = webHandle(child)
+      switch specification {
+        case Flex(_, _, _, _, _, List<FlexSizing> items) {
+          var sizing = if index < items.size() { items[index] } else {
+            FlexSizing()
+          }
+          peer.style(arg0: "flex-grow", arg1: sizing.grow.toString())
+          peer.style(arg0: "flex-shrink", arg1: sizing.shrink.toString())
+        }
+        case Grid(_, _, List<GridCell> items, _) {
+          peer.gridSpan(if index < items.size() { items[index].span } else { 1 })
+        }
+        case Stack(_, _) {
+          peer.style(arg0: "grid-area", arg1: "1 / 1")
+        }
+        case Dock(List<DockArea> areas) {
+          String area = switch areas[index] { case Top { break "1 / 1 / 2 / 4" } case Bottom { break "3 / 1 / 4 / 4" } case Left { break "2 / 1" } case Right { break "2 / 3" } case Center { break "2 / 2" } }
+          peer.style(arg0: "grid-area", arg1: area)
+        }
+        case Box(SizeConstraints size, _) {
+          peer.style(arg0: "width", arg1: if size.width == Dimension.Content { "max-content" } else { "100%" })
+          peer.style(arg0: "height", arg1: if size.height == Dimension.Content { "max-content" } else { "100%" })
+          peer.style(arg0: "min-width", arg1: "0")
+          peer.style(arg0: "min-height", arg1: "0")
+        }
+        case Scroll(_, Boolean fitWidth, Boolean fitHeight) {
+          peer.style(arg0: "width", arg1: if fitWidth { "100%" } else { "max-content" })
+          peer.style(arg0: "height", arg1: if fitHeight { "100%" } else { "max-content" })
+        }
+        case _ {}
+      }
+      index = index + 1
+    }
+  }
+}
+String webMain(MainAlignment alignment) {
+  switch alignment { case Start { break "flex-start" } case Center { break "center" } case End { break "flex-end" } case SpaceBetween { break "space-between" } case SpaceAround { break "space-around" } case SpaceEvenly { break "space-evenly" } }
+}
+String webCross(CrossAlignment alignment) {
+  switch alignment { case Start { break "start" } case Center { break "center" } case End { break "end" } case Stretch { break "stretch" } }
+}

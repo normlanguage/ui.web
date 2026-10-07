@@ -1,0 +1,1 @@
+Module module() { module(dependencies: [dependency(repository: "github", name: "ui.web", version: 1), dependency(repository: "github", name: "ui", version: 7), dependency(repository: "github", name: "ui.theme", version: 2)]) }

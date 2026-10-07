@@ -1,0 +1,193 @@
+package ui.web
+import ui.RenderNode
+import ui.LayoutBackend
+import ui.LayoutSpec
+import ui.ViewContent
+import ui.View
+import ui.WidgetRole
+import ui.ThemedRenderNode
+import ui.ConfiguredRenderNode
+import ui.UiConfiguration
+import ui.TextDirection
+import ui.TextFieldRenderNode
+import ui.TextFieldHandle
+import ui.TextFieldControl
+import ui.Binding
+import ui.theme.Theme
+import ui.theme.Tone
+import ui.theme.Appearance
+import ui.web.internal.WebNode
+import ui.web.internal.webNodeNew
+import java.base.util.arrayListNew
+import java.base.util.linkedHashMapNew
+import ui.theme.ThemeMode
+import std.core.Exception
+
+class WebBackend implements LayoutBackend {
+  RenderNode createLayout(LayoutSpec specification) {
+    WebLayoutNode(specification)
+  }
+  RenderNode create(ViewContent content) {
+    String kind = switch content {
+      case Text(_) {
+        break "text"
+      }
+      case Button(_, _) {
+        break "button"
+      }
+      case Input(_, _, _) {
+        break "input"
+      }
+      case Multiline(_, _, _, _) {
+        break "multiline"
+      }
+      case Toggle(_, _) {
+        break "toggle"
+      }
+      case Component(_, _) {
+        break "container"
+      }
+      case WidgetObject(_) {
+        break "container"
+      }
+      case Native(_) {
+        throw Exception(message: "native views are created by their descriptor")
+      }
+    }
+    WebRenderNode(peer: webNodeNew(arg0: kind))
+  }
+}
+interface WebNodePeer extends RenderNode {
+  WebNode webNode()
+}
+class WebRenderNode implements WebNodePeer, TextFieldRenderNode, ThemedRenderNode, ConfiguredRenderNode {
+  private WebNode peer
+  private Theme? snapshot = null
+  private WidgetRole role = WidgetRole.Default
+  private UiConfiguration settings = UiConfiguration()
+  WebRenderNode(WebNode peer) {
+    this.peer = peer
+  }
+  WebNode webNode() {
+    peer
+  }
+  TextFieldHandle textFieldHandle() {
+    TextFieldHandle(WebTextFieldControl(peer))
+  }
+  Void theme(Theme? theme) {
+    snapshot = theme
+    this.applyTheme()
+  }
+  private Void applyTheme() {
+    var properties = linkedHashMapNew<String, String>()
+    var theme = snapshot
+    if theme != null {
+      var primary = theme.control(tone: Tone.Primary, appearance: Appearance.Filled)
+      var palette = theme.control(tone: if role == WidgetRole.Destructive { Tone.Danger } else { Tone.Primary }, appearance: Appearance.Filled)
+      Boolean filled = role == WidgetRole.Primary || role == WidgetRole.Destructive
+      var foreground = if filled { palette.normal.foreground.hex() } else { if role == WidgetRole.Muted { theme.textMuted.hex() } else { theme.surface.foreground.hex() } }
+      var background = if filled { palette.normal.background.hex() } else { if role == WidgetRole.Card { theme.surfaceRaised.background.hex() } else { theme.surface.background.hex() } }
+      properties.put(arg0: "color", arg1: foreground)
+      properties.put(arg0: "background-color", arg1: background)
+      properties.put(arg0: "color-scheme", arg1: if theme.mode == ThemeMode.Dark { "dark" } else { "light" })
+      properties.put(arg0: "--aura-background-color-light", arg1: theme.surface.background.hex())
+      properties.put(arg0: "--aura-background-color-dark", arg1: theme.surface.background.hex())
+      properties.put(arg0: "--aura-neutral-light", arg1: theme.surface.foreground.hex())
+      properties.put(arg0: "--aura-neutral-dark", arg1: theme.surface.foreground.hex())
+      properties.put(arg0: "--aura-accent-color-light", arg1: primary.normal.background.hex())
+      properties.put(arg0: "--aura-accent-color-dark", arg1: primary.normal.background.hex())
+      properties.put(arg0: "--aura-accent-contrast-color-light", arg1: primary.normal.foreground.hex())
+      properties.put(arg0: "--aura-accent-contrast-color-dark", arg1: primary.normal.foreground.hex())
+      properties.put(arg0: "--vaadin-button-background", arg1: background)
+      properties.put(arg0: "--vaadin-button-text-color", arg1: foreground)
+      properties.put(arg0: "--vaadin-input-field-background", arg1: theme.surfaceRaised.background.hex())
+      properties.put(arg0: "--vaadin-input-field-value-color", arg1: theme.surface.foreground.hex())
+      properties.put(arg0: "--vaadin-input-field-placeholder-color", arg1: theme.textMuted.hex())
+      properties.put(arg0: "--vaadin-input-field-label-color", arg1: theme.surface.foreground.hex())
+      properties.put(arg0: "--vaadin-input-field-border-color", arg1: theme.outline.hex())
+      properties.put(arg0: "--vaadin-checkbox-label-color", arg1: theme.surface.foreground.hex())
+      properties.put(arg0: "--vaadin-focus-ring-color", arg1: primary.focusRing.hex())
+    }
+    peer.theme(properties)
+  }
+  Void configure(UiConfiguration configuration) {
+    settings = configuration
+    this.typography()
+    peer.style(arg0: "font-family", arg1: configuration.fontFamily)
+    peer.direction(arg0: configuration.direction == TextDirection.RightToLeft)
+    peer.style(arg0: "transition-duration", arg1: if configuration.motionEnabled { "" } else { "0s" })
+    peer.style(arg0: "animation-duration", arg1: if configuration.motionEnabled { "" } else { "0s" })
+  }
+  private Void typography() {
+    var scale = if role == WidgetRole.Title { 2.0 } else { 1.0 }
+    peer.style(arg0: "font-size", arg1: (settings.fontSize * scale).toString() + "px")
+    peer.style(arg0: "font-weight", arg1: if role == WidgetRole.Title { "600" } else { "400" })
+    peer.title(role == WidgetRole.Title)
+  }
+  Void update(View view) {
+    role = view.role
+    this.typography()
+    this.applyTheme()
+    peer.enabled(view.enabled)
+    peer.identity(arg0: switch view.key { case Named(String value) { break value } case Id(Integer value) { break value.toString() } case _ { break "" } })
+    switch view.content {
+      case Text(String text) {
+        peer.text(text)
+      }
+      case Button(String text, Function<Void()> action) {
+        peer.text(text)
+        peer.onAction(action)
+      }
+      case Input(String placeholder, Binding<String>? text, Function<Void(String)> submit) {
+        peer.placeholder(placeholder)
+        if text != null {
+          peer.text(text.value)
+          peer.onText((String? value) { text.value = value!! })
+        } else {
+          peer.onText((String? value) {})
+        }
+        peer.onAction(() { submit(peer.readText()!!) })
+      }
+      case Multiline(String placeholder, Binding<String> text, Integer rows, Boolean editable) {
+        peer.placeholder(placeholder)
+        peer.text(text.value)
+        peer.onText((String? value) { text.value = value!! })
+        peer.multiline(arg0: rows, arg1: editable)
+      }
+      case Toggle(String text, Binding<Boolean> checked) {
+        peer.text(text)
+        peer.checked(checked.value)
+        peer.onToggle((Boolean? value) { checked.value = value!! })
+      }
+      case _ {}
+    }
+  }
+  Void children(List<RenderNode> children) {
+    var nodes = arrayListNew<WebNode>()
+    for child : children {
+      nodes.add(webHandle(child))
+    }
+    peer.children(nodes)
+  }
+  Void close() {
+    peer.close()
+  }
+}
+class WebTextFieldControl implements TextFieldControl {
+  private WebNode peer
+  WebTextFieldControl(WebNode peer) {
+    this.peer = peer
+  }
+  String readText() {
+    peer.readText()!!
+  }
+  Void clear() {
+    peer.clear()
+  }
+  Void focus() {
+    peer.focus()
+  }
+}
+WebNode webHandle(RenderNode node) {
+  switch node { case WebNodePeer web { break web.webNode() } case _ { throw Exception(message: "node belongs to another rendering backend") } }
+}

@@ -1,0 +1,62 @@
+package ui.web
+import ui.Widget
+import ui.Renderer
+import ui.UiScheduler
+import ui.web.internal.WebSession
+import ui.web.internal.WebHost
+import ui.web.internal.webHostNew
+import std.core.Exception
+import std.core.Unit
+import std.concurrent.Task
+import std.io.Resource
+
+class WebScheduler implements UiScheduler {
+  private WebSession session
+  WebScheduler(WebSession session) {
+    this.session = session
+  }
+  Void later(Function<Void()> action) {
+    session.later(action)
+  }
+  Void report(Exception error) {
+    session.report(error.message)
+  }
+  Void track(Task<Unit> termination) { session.onClose(() { termination.close() }) }
+}
+class WebApplication implements Resource {
+  private WebSession session
+  private Renderer renderer
+  WebApplication(WebSession session, Widget widget) {
+    this.session = session
+    renderer = Renderer(backend: WebBackend(), scheduler: WebScheduler(session))
+    session.onClose(() { renderer.close() })
+    try { this.render(widget) } catch Exception failure {
+      renderer.close() throw failure
+    }
+  }
+  Void render(Widget widget) {
+    renderer.render(widget)
+    session.root(webHandle(renderer.node()))
+  }
+  Void close() {
+    session.close()
+  }
+}
+class WebServer implements Resource {
+  private WebHost host
+  WebServer(Function<Widget()> page, Integer port = 8080) {
+    host = webHostNew(arg0: port, arg1: (WebSession? session) { var mounted = WebApplication(session: session!!, widget: page()) return })
+  }
+  Void run() {
+    host.run()
+  }
+  Void close() {
+    host.close()
+  }
+}
+Void runWeb(Function<Widget()> page, Integer port = 8080) {
+  var server = WebServer(page: page, port: port)
+  try { server.run() } finally {
+    server.close()
+  }
+}

@@ -1,0 +1,93 @@
+package ui.web.test.rendering
+import ui.web.nativeComponent
+import ui.web.native.Span
+import ui.web.native.spanNew
+import ui.ViewScope
+import ui.web.WebBackend
+import ui.web.webHandle
+import ui.Renderer
+import ui.Widget
+import ui.View
+import ui.ViewContent
+import ui.Binding
+import ui.textField
+import ui.Column
+import ui.Grid
+import ui.GridItem
+import ui.GridBreakpoint
+import ui.Box
+import ui.SizeConstraints
+import ui.Dimension
+import ui.Insets
+import ui.Text
+import ui.CrossAlignment
+import ui.ForEach
+import ui.ValueKey
+import ui.State
+import ui.Key
+import ui.TextFieldHandle
+import ui.TextFieldReference
+import std.testing.Test
+
+class InputProbe implements Widget {
+  Key<TextFieldHandle> key = Key<TextFieldHandle>()
+  String value = "initial"
+  Integer initialized = 0
+  Integer disposed = 0
+  Void init() {
+    initialized = initialized + 1
+  }
+  Widget build() { View(content: ViewContent.Input(placeholder: "probe", text: Binding<String>(read: () { value }, write: (String next) { value = next }), submit: (String text) {}), reference: TextFieldReference(key)) }
+  Void dispose() {
+    disposed = disposed + 1
+  }
+}
+@Test
+Void realVaadinInputRetainsItsPeerAcrossOrdinaryFieldUpdates() {
+  var renderer = Renderer(backend: WebBackend())
+  var widget = InputProbe()
+  renderer.render(widget)
+  var node = renderer.node()
+  var handle = widget.key.current!!
+  require(condition: widget.initialized == 1, message: "real widget initialized")
+  widget.value = "updated"
+  require(condition: renderer.node() == node, message: "ordinary field updates preserve the Vaadin peer")
+  require(condition: handle.text == "updated", message: "binding updates the real Vaadin field")
+  renderer.close()
+  renderer.close()
+  require(condition: widget.disposed == 1, message: "widget resources close once")
+  widget.value = "after close"
+  require(condition: handle.text == "updated", message: "closed renderer unsubscribes from fields")
+}
+@Test
+Void genericLayoutsMountThroughTheSharedRenderer() {
+  var renderer = Renderer(backend: WebBackend())
+  renderer.render(Box(size: SizeConstraints(width: Dimension.Fill), padding: Insets(top: 12.0), content:
+    Column(cross: CrossAlignment.Stretch, gap: 10.0, children: [Grid(columns: 2, gap: 8.0,
+      breakpoints: [GridBreakpoint(minimumWidth: 480.0, columns: 3)], items: [GridItem(content: Text("one")), GridItem(content: Text("two"))])])))
+  renderer.close()
+}
+
+class ExtensionState { Integer closed = 0 }
+@Test
+Void nativeVaadinExtensionsUseTheSameRendererAndResourceScope() {
+  var state = ExtensionState()
+  var renderer = Renderer(backend: WebBackend())
+  var widget = ExtensionWidget(state: state)
+  renderer.render(widget)
+  widget.label = "Updated extension"
+  require(condition: widget.control!!.getText() == widget.label, message: "native component updates through ordinary Widget fields")
+  renderer.close()
+  require(condition: state.closed == 1, message: "native resource release runs once")
+}
+
+class ExtensionWidget implements Widget {
+  ExtensionState state
+  String label = "Native Vaadin extension"
+  Span? control = null
+  Widget build() {
+    nativeComponent<Span>(kind: "native-span", create: () { var span = spanNew() control = span return span },
+      component: (Span span) { span }, update: (Span span, ViewScope scope) { span.setText(label) },
+      close: (Span span) { state.closed = state.closed + 1 })
+  }
+}

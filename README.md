@@ -18,6 +18,8 @@ Open [localhost:8080](http://localhost:8080). The [example](samples/demo/applica
 
 The [build](build.gradle.kts) uses Vaadin's production frontend pipeline and includes the resulting assets in the Java artifact. The provided [host](src/main/java/dev/normlanguage/ui/web/WebHost.java) uses Spring Boot and Vaadin Flow push. [WebApplication](ui/web/application.norm) connects each host session to its widget renderer. No separate frontend development server is required by the packaged example.
 
+The committed [production bundle](src/main/bundles/prod.bundle) follows [Vaadin's source control guidance](https://vaadin.com/docs/latest/flow/configuration/source-control). Frontend changes require rebuilding this bundle with `./gradlew.bat vaadinBuildFrontend '-Pvaadin.forceProductionBuild=true' --rerun-tasks`, then running `./gradlew.bat clean publish` and `./scripts/prepare.ps1` to update the module's verified artifact resolution.
+
 ## Source index
 
 | Concern | Source |

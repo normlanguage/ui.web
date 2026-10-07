@@ -6,3 +6,8 @@ build/
 node_modules/
 frontend/generated/
 src/main/frontend/generated/
+src/main/bundles/*
+!src/main/bundles/prod.bundle
+.vaadin-node-tasks.lock
+vite.generated.ts
+types.d.ts

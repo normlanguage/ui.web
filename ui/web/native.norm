@@ -1,0 +1,87 @@
+package ui.web
+
+import ui.Widget
+import ui.View
+import ui.ViewContent
+import ui.NativeView
+import ui.NodeKey
+import ui.ViewScope
+import ui.RenderNode
+import ui.RenderBackend
+import ui.ThemedRenderNode
+import ui.ConfiguredRenderNode
+import ui.UiConfiguration
+import ui.describeChildren
+import ui.theme.Theme
+import ui.web.native.Component
+import ui.web.internal.WebNode
+import ui.web.internal.webNodeNew
+import std.core.Exception
+
+private class WebComponentView<T> implements NativeView {
+  String identity
+  List<Widget> content
+  Function<T()> initialize
+  Function<Component(T)> component
+  Function<Void(T, ViewScope)> apply
+  Function<Void(T, List<Component>)>? arrange
+  Function<Void(T)> release
+
+  String kind() { identity }
+  List<View> children() { describeChildren(content) }
+  RenderNode create(RenderBackend backend, ViewScope scope) {
+    switch backend {
+      case WebBackend web {
+        var control = scope.within<T>(initialize)
+        try {
+          var node = webNodeNew(component(control))
+          break WebComponentNode<T>(control: control, base: WebRenderNode(peer: node),
+            scope: scope, specification: this)
+        } catch Exception failure { release(control) throw failure }
+      }
+      case _ { throw Exception(message: "native component requires a Vaadin backend") }
+    }
+  }
+}
+
+private class WebComponentNode<T> implements WebNodePeer, ThemedRenderNode, ConfiguredRenderNode {
+  T control
+  WebRenderNode base
+  ViewScope scope
+  WebComponentView<T> specification
+  Boolean closed = false
+
+  WebNode webNode() { base.webNode() }
+  Void theme(Theme? theme) { base.theme(theme) }
+  Void configure(UiConfiguration configuration) { base.configure(configuration) }
+  Void update(View view) {
+    switch view.content {
+      case Native(WebComponentView<T> next) {
+        specification = next
+        base.update(view)
+        next.apply(control, scope)
+      }
+      case _ { throw Exception(message: "native component descriptor changed") }
+    }
+  }
+  Void children(List<RenderNode> children) {
+    var arrange = specification.arrange
+    if arrange != null {
+      arrange(control, [for (child : children) webHandle(child).nativeComponent()!!])
+    } else { base.children(children) }
+  }
+  Void close() {
+    if closed { return }
+    closed = true
+    try { specification.release(control) } finally { base.close() }
+  }
+}
+
+View nativeComponent<T>(String kind, Function<T()> create, Function<Component(T)> component,
+    Function<Void(T, ViewScope)> update, Function<Void(T)> close,
+    List<Widget> children = [], Function<Void(T, List<Component>)>? arrange = null,
+    NodeKey? key = null, Boolean enabled = true) {
+  View(key: key, enabled: enabled, content: ViewContent.Native(WebComponentView<T>(identity: kind,
+    content: children, initialize: create, component: component, apply: update,
+    arrange: arrange, release: close)))
+}
