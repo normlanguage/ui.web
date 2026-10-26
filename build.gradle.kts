@@ -5,7 +5,7 @@ plugins {
     id("com.diffplug.spotless") version "8.10.2"
 }
 group = "dev.normlanguage"
-version = "2"
+version = "3"
 repositories { mavenCentral() }
 java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
 dependencies {
@@ -53,3 +53,4 @@ publishing {
     } }
     repositories { maven { url = uri(layout.buildDirectory.dir("repository")) } }
 }
+
