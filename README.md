@@ -1,5 +1,7 @@
 # ui.web
 
+Built with [Norm](https://github.com/normlanguage/Norm).
+
 [中文](README.zh-CN.md)
 
 Vaadin backend for [Norm UI](https://github.com/normlanguage/ui). Layout, state, reconciliation and widget scopes come from `ui`; colors come from [ui.theme](https://github.com/normlanguage/ui.theme).
