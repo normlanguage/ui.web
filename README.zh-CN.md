@@ -1,5 +1,7 @@
 # ui.web
 
+本项目使用 [Norm](https://github.com/normlanguage/Norm) 构建。
+
 [English](README.md)
 
 [Norm UI](https://github.com/normlanguage/ui) 的 Vaadin 后端。布局、状态、节点复用和组件作用域由 `ui` 提供，颜色由 [ui.theme](https://github.com/normlanguage/ui.theme) 提供。
