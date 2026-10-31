@@ -950,4 +950,3 @@ UI(__JarBindingToken token)
 Parameters:
 
 - `token`: `__JarBindingToken`
-
