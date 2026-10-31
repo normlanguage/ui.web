@@ -1,7 +1,7 @@
 Module module() {
- module(name: "ui.web", version: 4,
+ module(name: "ui.web", version: 5,
   exports: ["native.UI", "native.Container", "native.Component", "native.Span", "backend", "application", "native"],
-  dependencies: [dependency(repository: "norm", name: "java.base", version: 1), dependency(repository: "github", name: "ui", version: 10), dependency(repository: "github", name: "ui.theme", version: 4)],
+  dependencies: [dependency(repository: "norm", name: "java.base", version: 1), dependency(repository: "github", name: "ui", version: 11), dependency(repository: "github", name: "ui.theme", version: 5)],
   binding: jarBinding(target: mavenJar(group: "dev.normlanguage", artifact: "ui-web", version: "3", resolution: sha256("d98272fede10222d52065782205328d51fcbd6b2d551be1ca026b6148590bc8e")), api: [
    jarType(name: "dev.normlanguage.ui.web.WebNode", alias: "internal.WebNode", members: ["new", "nativeComponent", "enabled", "identity", "title", "text", "readText", "placeholder", "multiline", "checked", "onAction", "onText", "onToggle", "clear", "focus", "children", "style", "layout", "layoutStyle", "direction", "theme", "grid", "gridSpan", "breakpoint", "responsive", "masonry", "close"]),
    jarType(name: "dev.normlanguage.ui.web.WebSession", alias: "internal.WebSession", members: ["new", "root", "onClose", "later", "report", "close"]),

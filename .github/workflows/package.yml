@@ -17,9 +17,9 @@ jobs:
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v7
-      - uses: normlanguage/registry/.github/actions/setup-norm@d229852448570c786a3f86e62c7db36769ed9a18
+      - uses: normlanguage/registry/.github/actions/setup-norm@90b4d247fa4f5f2b620924d2cbc0553e89843700
         with:
-          source-ref: 0ab66c108ee77d8a3f16f85f51499aaaaff15943
+          version: 0.27.23
       - uses: actions/setup-java@v4
         with:
           distribution: oracle
@@ -37,7 +37,7 @@ jobs:
       - name: Generate repository Skill
         shell: pwsh
         run: ./scripts/norm.ps1 docs ui/web --output build/api --skill SKILL.md
-      - uses: normlanguage/registry/.github/actions/package-module@77a26aef21f97b65c6343faf621412d91fed7a92
+      - uses: normlanguage/registry/.github/actions/package-module@90b4d247fa4f5f2b620924d2cbc0553e89843700
         id: package
         with:
           module-path: ui/web
@@ -55,7 +55,7 @@ jobs:
         with:
           name: test-results
           path: build/test-results
-      - uses: normlanguage/registry/.github/actions/publish-module@77a26aef21f97b65c6343faf621412d91fed7a92
+      - uses: normlanguage/registry/.github/actions/publish-module@90b4d247fa4f5f2b620924d2cbc0553e89843700
         with:
           archive: ${{ steps.package.outputs.archive }}
           version: ${{ steps.package.outputs.version }}
